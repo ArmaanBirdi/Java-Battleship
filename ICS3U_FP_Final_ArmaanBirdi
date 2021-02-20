@@ -1,0 +1,239 @@
+import java.util.Scanner;
+import java.util.Random;
+
+public class ICS3U_FP_Final_ArmaanBirdi {
+
+	public static void main(String[] args) {
+		Scanner in = new Scanner(System.in);
+		String[][] playerSea = new String[5][5], computerSea = new String[5][5];
+		String[][] playerLaunches = new String[5][5], computerLaunches = new String[5][5];
+		int numberOfShipsSunkPlayer = 0, numberOfShipsSunkComputer = 0;
+		boolean playAgain = false;
+		String yesOrNo = "";
+		double numberOfAttacks = 0;
+		System.out.println("***WELCOME TO BATTLESHIP***");
+		System.out.println("You will be playing against a computer which will randomly choose its decisions!");
+		System.out.println("Enter the deployment positions of your 5 ships below: ");
+		do {
+			numberOfShipsSunkPlayer = 0;
+			numberOfShipsSunkComputer = 0;
+			numberOfAttacks = 0;
+			fillBoard(playerSea, "~");
+			deployPlayerShips(playerSea);
+			System.out.println("This is your sea! [ ~ = Davy Jones's locker] [ $ = ship position ]");
+			System.out.println("Also, the grid is labeled for your convenience!");
+			printSea(playerSea);
+			fillBoard(playerLaunches, "0");
+			fillBoard(computerSea, "~");
+			deployComputerShips(computerSea);
+			fillBoard(computerLaunches, "0");
+			boolean gameWon = false, gameLost = false;
+			do {
+				numberOfAttacks++;
+				numberOfShipsSunkPlayer = launchPlayerAttack(computerSea, numberOfShipsSunkPlayer, playerLaunches,
+						numberOfAttacks);
+				if (numberOfShipsSunkPlayer == 5) {
+					System.out.println("You won the game!");
+					gameWon = true;
+					printSea(computerSea);
+				} else {
+					// Ellen's suggestion: change else if statement into and else statement
+					numberOfShipsSunkComputer = launchComputerAttack(playerSea, numberOfShipsSunkComputer,
+							computerLaunches);
+					if (numberOfShipsSunkComputer == 5) {
+						System.out.println("You lost the game!");
+						gameLost = true;
+						System.out.println(
+								"This was the computer's sea! [ ~ = Davy Jones's locker] [ @ = ship position ]");
+						printSea(computerSea);
+					}
+				}
+			} while (gameWon == false && gameLost == false);
+			System.out.print("Stats: Your attack efficiency was ");
+			System.out.println(Math.round(((occurrencesInArray(playerLaunches, "H") / numberOfAttacks) * 100)) + "%");
+			// Ellen's report: fixed rounding error
+			System.out.println("Would you like to play again (yes or no)?");
+			yesOrNo = in.next();
+			yesOrNo = yesOrNo.toLowerCase();
+			if (yesOrNo.charAt(0) == 'y') {
+				playAgain = true;
+			} else {
+				playAgain = false;
+			}
+		} while (playAgain == true);
+	}
+
+	public static void fillBoard(String[][] playerSea, String fillerStr) {
+		// in: the player's board or the computer's board | desc: takes the player's
+		// board, fills it with 25 ~'s or "0"s | out: returns void, nor is anything
+		// printed
+		for (int row = 0; row < playerSea.length; row++) {
+			for (int column = 0; column < playerSea[row].length; column++) {
+				playerSea[row][column] = fillerStr;
+			}
+		}
+	}
+
+	public static void printSea(String[][] playerSea) {
+		// in: the players board | desc: takes the player's board, prints array in grid
+		// format with whatever element is held at [row][column] desc (cont'd): adds
+		// space between every element and grid labels | out: returns void, prints
+		// playerSea
+		System.out.println("1 2 3 4 5");
+		for (int row = 0; row < playerSea.length; row++) {
+			for (int column = 0; column < playerSea[0].length; column++) {
+				System.out.print(playerSea[row][column] + " ");
+			}
+			System.out.println(((char) (65 + row)) + " ");
+		}
+	}
+
+	public static int launchPlayerAttack(String[][] computerSea, int numberOfShipsSunkPlayer, String[][] playerLaunches,
+			double numberOfAttacks) {
+		// in: computer's sea, current number of ships sunk by player, players grid to
+		// keep track of their launches, number of attacks | desc: prompts the user for
+		// an alphanumeric for their attack position (uses ASCII), then uses isShipSunk
+		// to determine whether the attack sunk a ship | out: number of ships sunk by
+		// the player
+		String alphanumeric = "";
+		Scanner in = new Scanner(System.in);
+		int row = 0, column = 0;
+		for (int i = 0; i < 1;) {
+			System.out.print("Enter an alphanumeric for attack position number " + (int) numberOfAttacks
+					+ " (A-E for row number followed by 1 to 5 for column number): ");
+			alphanumeric = in.next();
+			alphanumeric = alphanumeric.toUpperCase();
+			// outside testing suggestion: make it so the user can enter both lower case and
+			// upper case lettering
+			if (alphanumeric.length() == 2) {
+				row = ((int) alphanumeric.charAt(0)) - 65;
+				column = ((int) alphanumeric.charAt(1)) - 49;
+				if (row < 5 && column < 5) {
+					if (playerLaunches[row][column] == "0") {
+						if (isShipSunk(computerSea, row, column) == true) {
+							playerLaunches[row][column] = "H";
+							numberOfShipsSunkPlayer++;
+						} else {
+							playerLaunches[row][column] = "M";
+						}
+					}
+					System.out.println(
+							"You can keep track of your launches here! [ H = hit ] [ M = miss ] [ 0 = have not attacked there yet ]");
+					// Ellen's suggestion: display a sentence indicating that the letter “M” and “H”
+					// acronyms for “hit” and “miss”.
+					printSea(playerLaunches);
+					i++;
+				} else {
+					System.out.println("You launched an attack out of the sea! Re-enter!");
+				}
+			} else {
+				System.out.println("Your coordinate entered must be two letters long! Re-enter!");
+			}
+		}
+		return numberOfShipsSunkPlayer;
+	}
+
+	public static boolean isShipSunk(String[][] sea, int row, int column) {
+		// in: any sea, row, column | desc: checks if array contains an @ or a $ | out:
+		// returns boolean for optimization of other methods
+		if (sea[row][column] == "@" || sea[row][column] == "$") {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public static int launchComputerAttack(String[][] playerSea, int numberOfShipsSunkComputer,
+			String[][] computerLaunches) {
+		// in: playerSea for isShipSunk method, number of sinks sunk by the computer,
+		// record of computer launches | desc: the computer generates a distinct
+		// attacking position | out: number of sinks sunk by the computer
+		Random r = new Random();
+		int row = 0, column = 0;
+		System.out.println("Computer is now attacking...");
+		for (int i = 0; i < 1;) {
+			row = r.nextInt(5);
+			column = r.nextInt(5);
+			if (isShipSunk(playerSea, row, column) == true && computerLaunches[row][column] == "0") {
+				computerLaunches[row][column] = "H";
+				numberOfShipsSunkComputer++;
+				i++;
+			} else if (isShipSunk(playerSea, row, column) == false && computerLaunches[row][column] == "0") {
+				computerLaunches[row][column] = "M";
+				i++;
+			}
+		}
+		printSea(computerLaunches);
+		return numberOfShipsSunkComputer;
+	}
+
+	public static String[][] deployPlayerShips(String[][] playerSea) {
+		// in: player's sea | desc: takes in an alphanumeric and changes the ~ at that
+		// position to a $ | out: player's sea
+		Scanner in = new Scanner(System.in);
+		String alphanumeric = "";
+		int row = 0, column = 0;
+		for (int i = 0; i < 5;) {
+			System.out.print("Enter an alphanumeric for the deployment position of ship " + (i + 1)
+					+ " (A-E for row number followed by 1 to 5 for column number): ");
+			alphanumeric = in.next();
+			alphanumeric = alphanumeric.toUpperCase();
+			// outside testing suggestion: make it so the user can enter both lower case and
+			// upper case lettering
+			if (alphanumeric.length() == 2) {
+				row = ((int) alphanumeric.charAt(0)) - 65;
+				column = (int) (alphanumeric.charAt(1)) - 49;
+				if (row < 5 && column < 5) {
+					if (playerSea[row][column] != "$") {
+						playerSea[row][column] = "$";
+						i++;
+					} else {
+						System.out.println("You already deployed a ship here! Re-enter!");
+					}
+				} else {
+					System.out.println("You deployed a ship out of the sea! Re-enter!");
+				}
+			} else {
+				System.out.println("Your coordinate entered must be two letters long! Re-enter!");
+			}
+		}
+		return playerSea;
+	}
+
+	public static String[][] deployComputerShips(String[][] computerSea) {
+		// in: computer's sea | desc: uses java.util.Random class to randomly add ships
+		// to computerSea array, if computer generates position that has already been
+		// generated, the loop will not increment. Only when five distinct positions
+		// have been generated will the for loop exit | out: computerSea filled with
+		// ships
+		Random r = new Random();
+		int row = 0, column = 0;
+		for (int i = 0; i < 5;) {
+			row = r.nextInt(5);
+			column = r.nextInt(5);
+			if (computerSea[row][column] == "~") {
+				computerSea[row][column] = "@";
+				i++;
+			}
+		}
+		return computerSea;
+	}
+
+	public static double occurrencesInArray(String[][] array, String target) { //
+		// in: 2D array, target | desc: goes
+		// through array to find number of
+		// occurrences of the specified target
+		// out: returns occurrences of that
+		// target for efficiency statistic at
+		// the end of the game
+		int occurrences = 0;
+		for (int row = 0; row < array.length; row++) {
+			for (int column = 0; column < array[row].length; column++) {
+				if (array[row][column] == target) {
+					occurrences++;
+				}
+			}
+		}
+		return occurrences;
+	}
+}
